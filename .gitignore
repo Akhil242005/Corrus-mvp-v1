@@ -1,0 +1,10 @@
+@"
+node_modules/
+.next/
+dist/
+build/
+.env*
+!.env.example
+*.log
+"@ | Set-Content -Path .gitignore -Encoding utf8
+public/uploads/

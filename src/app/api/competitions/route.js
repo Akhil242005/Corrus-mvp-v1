@@ -1,0 +1,54 @@
+import { NextResponse } from 'next/server';
+import pool from '@/lib/db';
+import { authenticateToken } from '@/lib/auth';
+
+export async function GET(req) {
+  try {
+    // Authenticate token
+    await authenticateToken(req);
+
+    const query = `
+      SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
+             c.experience_required as "experienceRequired", c.other_requirements as "otherRequirements", c.created_at as "createdAt",
+             comp.id as "companyId", comp.name as "companyName", comp.place as "companyPlace", 
+             comp.description as "companyDesc", comp.website as "companyWeb", comp.is_verified as "companyVerified",
+             u.firstname as "creatorFirst", u.lastname as "creatorLast"
+      FROM competitions c
+      INNER JOIN companies comp ON c.company_id = comp.id
+      INNER JOIN users u ON c.created_by = u.id
+      WHERE c.is_deleted = false AND comp.is_deleted = false
+      ORDER BY c.created_at DESC
+    `;
+
+    const res = await pool.query(query);
+
+    const competitions = res.rows.map(row => ({
+      _id: row.id.toString(),
+      id: row.id,
+      title: row.title,
+      taskDescription: row.taskDescription,
+      skillsRequired: row.skillsRequired || [],
+      experienceRequired: row.experienceRequired,
+      otherRequirements: row.otherRequirements || '',
+      createdAt: row.createdAt,
+      companyId: {
+        _id: row.companyId.toString(),
+        id: row.companyId,
+        name: row.companyName,
+        place: row.companyPlace,
+        description: row.companyDesc || '',
+        website: row.companyWeb || '',
+        isVerified: row.companyVerified
+      },
+      createdBy: {
+        firstname: row.creatorFirst,
+        lastname: row.creatorLast
+      }
+    }));
+
+    return NextResponse.json(competitions, { status: 200 });
+  } catch (err) {
+    console.error('Competitions API Exception:', err);
+    return NextResponse.json({ error: err.message || 'Failed to fetch competitions' }, { status: 500 });
+  }
+}
