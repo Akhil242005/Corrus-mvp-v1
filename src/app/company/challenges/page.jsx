@@ -57,6 +57,7 @@ export default function WorkspaceChallenges() {
   const [compExp, setCompExp] = useState('Entry-Level (0-2 years)');
   const [compLang, setCompLang] = useState('Python');
   const [compOther, setCompOther] = useState('');
+  const [compTemplateRepo, setCompTemplateRepo] = useState('');
   const [compError, setCompError] = useState('');
   const [compSuccess, setCompSuccess] = useState('');
 
@@ -97,12 +98,12 @@ export default function WorkspaceChallenges() {
     setCompError('');
     setCompSuccess('');
 
-    if (!compTitle.trim() || !compDesc.trim()) {
-      setCompError('Title and task description are required');
+    if (!compTitle.trim() || !compDesc.trim() || !compTemplateRepo.trim()) {
+      setCompError('Title, description, and GitHub template repository are required');
       return;
     }
 
-    const res = await handleAddCompetition(compTitle, compDesc, compLang, compSkills, compExp, compOther);
+    const res = await handleAddCompetition(compTitle, compDesc, compLang, compSkills, compExp, compOther, compTemplateRepo);
     if (res.success) {
       setCompSuccess('Hiring challenge published successfully!');
       setCompTitle('');
@@ -111,6 +112,7 @@ export default function WorkspaceChallenges() {
       setCompSkills('');
       setCompExp('Entry-Level (0-2 years)');
       setCompOther('');
+      setCompTemplateRepo('');
       setIsAddingComp(false);
     } else {
       setCompError(res.error || 'Failed to create challenge');
@@ -382,6 +384,18 @@ export default function WorkspaceChallenges() {
                   onChange={(e) => setCompOther(e.target.value)}
                   rows={2}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 bg-slate-50/50 outline-none glow-input font-medium resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block mb-1">GitHub Template Repository URL *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. https://github.com/my-org/challenge-template"
+                  value={compTemplateRepo}
+                  onChange={(e) => setCompTemplateRepo(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 bg-slate-50/50 outline-none glow-input font-medium"
+                  required
                 />
               </div>
 
