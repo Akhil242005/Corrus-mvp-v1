@@ -127,7 +127,7 @@ export default function CompanyLayout({ children }) {
   };
 
   // Handle posting hiring competition
-  const handleAddCompetition = async (title, description, language, skills, experience, other, githubTemplateRepo) => {
+  const handleAddCompetition = async (title, description, language, skills, experience, other) => {
     try {
       const res = await fetch('/api/company/competitions', {
         method: 'POST',
@@ -141,8 +141,7 @@ export default function CompanyLayout({ children }) {
           language,
           skillsRequired: skills.split(',').map(s => s.trim()).filter(Boolean),
           experienceRequired: experience,
-          otherRequirements: other,
-          githubTemplateRepo
+          otherRequirements: other
         })
       });
 

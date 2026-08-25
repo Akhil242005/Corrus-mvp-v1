@@ -31,6 +31,7 @@ export async function GET(req) {
       pool.query(
         `SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
                 c.experience_required as "experienceRequired", c.other_requirements as "otherRequirements", c.created_at as "createdAt",
+                c.github_template_repo as "githubTemplateRepo", c.github_setup_status as "githubSetupStatus",
                 u.firstname as "creatorFirst", u.lastname as "creatorLast"
          FROM competitions c
          INNER JOIN users u ON c.created_by = u.id
@@ -83,6 +84,8 @@ export async function GET(req) {
       skillsRequired: c.skillsRequired || [],
       experienceRequired: c.experienceRequired,
       otherRequirements: c.otherRequirements || '',
+      githubTemplateRepo: c.githubTemplateRepo,
+      githubSetupStatus: c.githubSetupStatus || 'completed',
       createdAt: c.createdAt,
       createdBy: {
         firstname: c.creatorFirst,

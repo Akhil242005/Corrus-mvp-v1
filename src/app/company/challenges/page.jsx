@@ -15,7 +15,8 @@ export default function WorkspaceChallenges() {
     competitions,
     token,
     handleAddCompetition,
-    handleDeleteCompetition
+    handleDeleteCompetition,
+    fetchDashboardData
   } = useContext(CompanyContext);
 
   // Search & Filter
@@ -57,32 +58,25 @@ export default function WorkspaceChallenges() {
   const [compExp, setCompExp] = useState('Entry-Level (0-2 years)');
   const [compLang, setCompLang] = useState('Python');
   const [compOther, setCompOther] = useState('');
-  const [compTemplateRepo, setCompTemplateRepo] = useState('');
-  const [orgRepos, setOrgRepos] = useState([]);
-  const [loadingRepos, setLoadingRepos] = useState(false);
   const [compError, setCompError] = useState('');
   const [compSuccess, setCompSuccess] = useState('');
 
-  useEffect(() => {
-    if (isAddingComp) {
-      fetchOrgRepos();
-    }
-  }, [isAddingComp]);
-
-  const fetchOrgRepos = async () => {
-    setLoadingRepos(true);
+  const handleRetrySetup = async (competitionId) => {
     try {
-      const res = await fetch('/api/company/github-repos', {
+      const res = await fetch(`/api/company/competitions/${competitionId}/retry`, {
+        method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
       if (res.ok) {
-        setOrgRepos(data.repos || []);
+        alert('GitHub Template Setup completed successfully!');
+        fetchDashboardData(token);
+      } else {
+        alert(data.error || 'Failed to retry GitHub setup');
       }
     } catch (err) {
-      console.error('Failed to load GitHub repos:', err);
-    } finally {
-      setLoadingRepos(false);
+      console.error(err);
+      alert('Network error while retrying GitHub setup');
     }
   };
 
@@ -123,12 +117,12 @@ export default function WorkspaceChallenges() {
     setCompError('');
     setCompSuccess('');
 
-    if (!compTitle.trim() || !compDesc.trim() || !compTemplateRepo.trim()) {
-      setCompError('Title, description, and GitHub template repository are required');
+    if (!compTitle.trim() || !compDesc.trim()) {
+      setCompError('Title and task description are required');
       return;
     }
 
-    const res = await handleAddCompetition(compTitle, compDesc, compLang, compSkills, compExp, compOther, compTemplateRepo);
+    const res = await handleAddCompetition(compTitle, compDesc, compLang, compSkills, compExp, compOther);
     if (res.success) {
       setCompSuccess('Hiring challenge published successfully!');
       setCompTitle('');
@@ -137,7 +131,6 @@ export default function WorkspaceChallenges() {
       setCompSkills('');
       setCompExp('Entry-Level (0-2 years)');
       setCompOther('');
-      setCompTemplateRepo('');
       setIsAddingComp(false);
     } else {
       setCompError(res.error || 'Failed to create challenge');
@@ -208,6 +201,7 @@ export default function WorkspaceChallenges() {
                 <th className="p-4">Title</th>
                 <th className="p-4">Experience Tier</th>
                 <th className="p-4">Key Abstractions</th>
+                <th className="p-4">Template Repository</th>
                 <th className="p-4">Created Representative</th>
                 <th className="p-4 pr-6 text-right">Actions</th>
               </tr>
@@ -228,6 +222,35 @@ export default function WorkspaceChallenges() {
                         </span>
                       ))}
                     </div>
+                  </td>
+                  <td className="p-4">
+                    {c.githubSetupStatus === 'completed' && c.githubTemplateRepo ? (
+                      <a
+                        href={c.githubTemplateRepo}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-brand hover:underline font-bold inline-flex items-center gap-1"
+                      >
+                        🔗 {c.githubTemplateRepo.split('/').pop()}
+                      </a>
+                    ) : c.githubSetupStatus === 'failed' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-500 font-extrabold flex items-center gap-1">
+                          ⚠️ Failed
+                        </span>
+                        <button
+                          onClick={() => handleRetrySetup(c.id)}
+                          className="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 text-[10px] font-black rounded-lg transition cursor-pointer"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <div className="animate-spin rounded-full h-3 w-3 border border-slate-300 border-b-slate-500"></div>
+                        <span className="font-semibold">Setting up...</span>
+                      </div>
+                    )}
                   </td>
                   <td className="p-4 text-slate-500 font-semibold">
                     {c.createdBy.firstname} {c.createdBy.lastname}
@@ -410,32 +433,6 @@ export default function WorkspaceChallenges() {
                   rows={2}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 bg-slate-50/50 outline-none glow-input font-medium resize-none"
                 />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block mb-1">GitHub Template Repository *</label>
-                {loadingRepos ? (
-                  <div className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50/50 text-slate-400 font-semibold flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-slate-400/25 border-b-slate-600"></div>
-                    <span>Loading organization repositories...</span>
-                  </div>
-                ) : orgRepos.length > 0 ? (
-                  <select
-                    value={compTemplateRepo}
-                    onChange={(e) => setCompTemplateRepo(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 bg-slate-50/50 outline-none glow-input font-bold cursor-pointer"
-                    required
-                  >
-                    <option value="">Select a template repository...</option>
-                    {orgRepos.map(r => (
-                      <option key={r.fullName} value={r.htmlUrl}>{r.fullName}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="w-full px-3.5 py-2.5 border border-amber-200 bg-amber-50/30 text-amber-800 rounded-xl text-[11px] font-medium leading-relaxed">
-                    ⚠️ No templates found in your organization. Please ensure the GitHub App is installed and templates are created in your org.
-                  </div>
-                )}
               </div>
 
               {compError && <p className="text-xs font-bold text-rose-500">{compError}</p>}
