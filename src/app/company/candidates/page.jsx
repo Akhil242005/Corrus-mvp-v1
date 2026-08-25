@@ -6,6 +6,7 @@ import CanonicalTag from '@/components/CanonicalTag';
 import SearchFilterBar from '@/components/SearchFilterBar';
 import { getCanonicalId } from '@/lib/idMapper';
 import Pagination from '@/components/Pagination';
+import { createPortal } from 'react-dom';
 
 export default function CompanyCandidates() {
   const { competitions, token } = useContext(CompanyContext);
@@ -29,6 +30,12 @@ export default function CompanyCandidates() {
   // Details Modal state
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     const loadAllCandidates = async () => {
@@ -195,9 +202,9 @@ export default function CompanyCandidates() {
       )}
 
       {/* Candidate Detail Modal */}
-      {isDetailsOpen && selectedCandidate && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsDetailsOpen(false)}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-xl relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {mounted && isDetailsOpen && selectedCandidate && createPortal(
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[10px] flex items-center justify-center overflow-y-auto py-8 px-4 z-50 animate-fade-in" onClick={() => setIsDetailsOpen(false)}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-xl relative animate-modal max-h-[90vh] overflow-y-auto my-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsDetailsOpen(false)} className="absolute top-4 right-5 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             {/* Header */}
@@ -248,7 +255,8 @@ export default function CompanyCandidates() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

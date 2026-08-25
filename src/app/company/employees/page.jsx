@@ -7,6 +7,7 @@ import SearchFilterBar from '@/components/SearchFilterBar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { getCanonicalId } from '@/lib/idMapper';
 import Pagination from '@/components/Pagination';
+import { createPortal } from 'react-dom';
 
 export default function WorkspaceEmployees() {
   const {
@@ -33,6 +34,13 @@ export default function WorkspaceEmployees() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -223,9 +231,9 @@ export default function WorkspaceEmployees() {
       />
 
       {/* Add Employee Modal Form overlay */}
-      {isAddingEmp && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={closeEmployeeModal}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {mounted && isAddingEmp && createPortal(
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[10px] flex items-center justify-center overflow-y-auto py-8 px-4 z-50 animate-fade-in" onClick={closeEmployeeModal}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative animate-modal max-h-[90vh] overflow-y-auto my-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={closeEmployeeModal} className="absolute top-4 right-5 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 mb-6 uppercase tracking-wider">
@@ -339,7 +347,8 @@ export default function WorkspaceEmployees() {
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {selectedEmp && (

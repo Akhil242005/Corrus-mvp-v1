@@ -7,6 +7,7 @@ import SearchFilterBar from '@/components/SearchFilterBar';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { getCanonicalId } from '@/lib/idMapper';
 import Pagination from '@/components/Pagination';
+import { createPortal } from 'react-dom';
 
 export default function CompanySubmissions() {
   const { competitions, token } = useContext(CompanyContext);
@@ -19,6 +20,13 @@ export default function CompanySubmissions() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -256,9 +264,9 @@ export default function CompanySubmissions() {
       )}
 
       {/* Review Modal */}
-      {isModalOpen && selectedSub && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-2xl relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      {mounted && isModalOpen && selectedSub && createPortal(
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[10px] flex items-center justify-center overflow-y-auto py-8 px-4 z-50 animate-fade-in" onClick={() => setIsModalOpen(false)}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-2xl relative animate-modal max-h-[90vh] overflow-y-auto my-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             <div className="mb-6 border-b border-slate-100 pb-4">
@@ -404,7 +412,8 @@ export default function CompanySubmissions() {
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Confirmation dialog */}

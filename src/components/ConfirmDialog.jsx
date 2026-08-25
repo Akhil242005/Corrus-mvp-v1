@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function ConfirmDialog({
   isOpen,
@@ -14,6 +15,13 @@ export default function ConfirmDialog({
   targetId = ''
 }) {
   const [typedInput, setTypedInput] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMounted(true);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -26,13 +34,13 @@ export default function ConfirmDialog({
     onClose();
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-[10px] flex items-center justify-center overflow-y-auto py-8 px-4 z-50 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white border border-slate-200 rounded-xl shadow-2xl p-6 w-full max-w-md relative animate-modal"
+        className="bg-white border border-slate-200 rounded-xl shadow-2xl p-6 w-full max-w-md relative animate-modal max-h-[90vh] overflow-y-auto my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -90,4 +98,6 @@ export default function ConfirmDialog({
       </div>
     </div>
   );
+
+  return mounted ? createPortal(modalContent, document.body) : null;
 }

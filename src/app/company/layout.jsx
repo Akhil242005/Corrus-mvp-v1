@@ -4,6 +4,7 @@ import { useState, useEffect, createContext } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getCanonicalId } from '@/lib/idMapper';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 
 export const CompanyContext = createContext(null);
 
@@ -399,9 +400,9 @@ export default function CompanyLayout({ children }) {
         )}
 
         {/* Dialog Modals */}
-        {activeModal && (
-          <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4 z-50" onClick={() => setActiveModal(null)}>
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md relative animate-modal" onClick={(e) => e.stopPropagation()}>
+        {activeModal && createPortal(
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[10px] flex items-center justify-center overflow-y-auto py-8 px-4 z-50 animate-fade-in" onClick={() => setActiveModal(null)}>
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-md relative animate-modal max-h-[90vh] overflow-y-auto my-auto" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => setActiveModal(null)} className="absolute top-3.5 right-4 text-xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
               
               {activeModal === 'settings' && (
@@ -432,7 +433,8 @@ export default function CompanyLayout({ children }) {
                 </div>
               )}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </CompanyContext.Provider>
