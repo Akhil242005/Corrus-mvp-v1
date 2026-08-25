@@ -103,6 +103,11 @@ export default function CandidateLayout({ children }) {
 
   // Handle competition enrollment
   const handleEnroll = async (compId) => {
+    if (!user || !user.githubUsername) {
+      alert('GitHub account is required for this competition. Redirecting to GitHub sign-in...');
+      window.location.href = '/auth/github';
+      return;
+    }
     try {
       const res = await fetch(`/api/competitions/${compId}/enroll`, {
         method: 'POST',
@@ -376,6 +381,25 @@ export default function CandidateLayout({ children }) {
           {/* Main Content Area */}
           <main className="flex-1 p-6 md:p-8 overflow-y-auto">
             <div className="max-w-5xl mx-auto w-full">
+              {!user.githubUsername && (
+                <div className="bg-slate-900 border border-slate-800 text-white p-5 rounded-2xl shadow-xl mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🔗</span>
+                    <div>
+                      <h4 className="font-extrabold text-xs tracking-wider uppercase text-slate-400">GitHub Association Required</h4>
+                      <p className="text-slate-200 text-xs font-semibold mt-0.5">Please link your GitHub account to access workspace templates and complete challenge submissions.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      window.location.href = '/auth/github';
+                    }}
+                    className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-extrabold rounded-xl border border-white/10 shadow-md transition whitespace-nowrap text-center cursor-pointer"
+                  >
+                    Link GitHub Account
+                  </button>
+                </div>
+              )}
               {children}
             </div>
           </main>

@@ -18,7 +18,7 @@ export async function GET(req) {
 
     const userRes = await pool.query(
       `SELECT id, firstname, lastname, email, phone, role, company_id, 
-              is_approved, experience, skills, education, projects, resume_url, created_at 
+              is_approved, experience, skills, education, projects, resume_url, github_username, created_at 
        FROM users WHERE id = $1 AND is_deleted = false`,
       [user.userId]
     );
@@ -45,6 +45,7 @@ export async function GET(req) {
       education: dbUser.education || '',
       projects: dbUser.projects || '',
       resumeUrl: dbUser.resume_url || '',
+      githubUsername: dbUser.github_username || null,
       createdAt: dbUser.created_at
     };
 
@@ -226,7 +227,8 @@ export async function PUT(req) {
       skills: updatedUser.skills || [],
       education: updatedUser.education || '',
       projects: updatedUser.projects || '',
-      resumeUrl: updatedUser.resume_url || ''
+      resumeUrl: updatedUser.resume_url || '',
+      githubUsername: updatedUser.github_username || null
     };
 
     return NextResponse.json({ message: 'Profile updated successfully!', user: formattedUser }, { status: 200 });

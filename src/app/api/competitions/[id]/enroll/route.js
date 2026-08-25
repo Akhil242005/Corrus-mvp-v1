@@ -98,10 +98,10 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: 'Invalid template repository configuration' }, { status: 400 });
     }
 
-    // Generate repository name: {competition-slug}-{candidate-id}
-    const slug = slugify(competition.title);
-    const canonicalId = getCanonicalId('candidate', user.userId).toLowerCase();
-    const repoName = `${slug}-${canonicalId}`;
+    // Generate repository name: candidateid + competitionid
+    const candidateCanonicalId = getCanonicalId('candidate', user.userId).toLowerCase();
+    const competitionCanonicalId = getCanonicalId('challenge', competitionId).toLowerCase();
+    const repoName = `${candidateCanonicalId}-${competitionCanonicalId}`;
 
     const appId = process.env.GITHUB_APP_ID;
     let rawPrivateKey = process.env.GITHUB_APP_PRIVATE_KEY || process.env.GITHUB_PRIVATE_KEY;
