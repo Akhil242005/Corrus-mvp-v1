@@ -224,8 +224,8 @@ export default function WorkspaceEmployees() {
 
       {/* Add Employee Modal Form overlay */}
       {isAddingEmp && (
-        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={closeEmployeeModal}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative animate-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={closeEmployeeModal}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={closeEmployeeModal} className="absolute top-4 right-5 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 mb-6 uppercase tracking-wider">

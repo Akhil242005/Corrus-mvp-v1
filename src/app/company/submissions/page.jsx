@@ -257,8 +257,8 @@ export default function CompanySubmissions() {
 
       {/* Review Modal */}
       {isModalOpen && selectedSub && (
-        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-2xl relative animate-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsModalOpen(false)}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-2xl relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             <div className="mb-6 border-b border-slate-100 pb-4">

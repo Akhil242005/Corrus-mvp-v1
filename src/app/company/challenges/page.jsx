@@ -237,8 +237,8 @@ export default function WorkspaceChallenges() {
 
       {/* Roster Modal */}
       {isEnrolledOpen && selectedComp && (
-        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsEnrolledOpen(false)}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-3xl relative animate-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsEnrolledOpen(false)}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 w-full max-w-3xl relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsEnrolledOpen(false)} className="absolute top-4 right-4 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 mb-5 uppercase tracking-wider">
@@ -296,8 +296,8 @@ export default function WorkspaceChallenges() {
 
       {/* Add Challenge Modal */}
       {isAddingComp && (
-        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsAddingComp(false)}>
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative animate-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsAddingComp(false)}>
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-8 w-full max-w-lg relative animate-modal max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setIsAddingComp(false)} className="absolute top-4 right-5 text-2xl text-slate-400 hover:text-slate-600 cursor-pointer">×</button>
             
             <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-100 pb-2.5 mb-6 uppercase tracking-wider">
