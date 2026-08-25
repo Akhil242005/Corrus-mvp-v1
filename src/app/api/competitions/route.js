@@ -5,7 +5,8 @@ import { authenticateToken } from '@/lib/auth';
 export async function GET(req) {
   try {
     // Authenticate token
-    await authenticateToken(req);
+    const decoded = await authenticateToken(req);
+    const userId = decoded.userId;
 
     const query = `
       SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
@@ -22,14 +23,20 @@ export async function GET(req) {
 
     const res = await pool.query(query);
 
-    // Fetch all enrollments to map enrolled users
-    const enrollmentsRes = await pool.query('SELECT competition_id, user_id FROM competition_enrollments');
+    // Fetch all enrollments to map enrolled users and repo URLs
+    const enrollmentsRes = await pool.query('SELECT competition_id, user_id, repo_url FROM competition_enrollments');
     const enrollMap = {};
+    const userRepoMap = {};
+
     enrollmentsRes.rows.forEach(row => {
       if (!enrollMap[row.competition_id]) {
         enrollMap[row.competition_id] = [];
       }
       enrollMap[row.competition_id].push(row.user_id);
+
+      if (row.user_id === userId) {
+        userRepoMap[row.competition_id] = row.repo_url;
+      }
     });
 
     const competitions = res.rows.map(row => ({
@@ -42,6 +49,7 @@ export async function GET(req) {
       otherRequirements: row.otherRequirements || '',
       createdAt: row.createdAt,
       enrolledUsers: enrollMap[row.id] || [],
+      enrolledRepoUrl: userRepoMap[row.id] || null,
       companyId: {
         _id: row.companyId.toString(),
         id: row.companyId,

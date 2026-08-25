@@ -108,9 +108,21 @@ export default function EnrolledCompetitions() {
                     </div>
                     <div className="flex items-center justify-between mt-2 border-t border-slate-50 pt-2">
                       <span className="text-xs font-semibold text-slate-600">🕒 {c.experienceRequired} exp</span>
-                      <span className="text-xs font-bold text-brand underline hover:text-brand-hover">
-                        View Sandbox
-                      </span>
+                      {c.enrolledRepoUrl ? (
+                        <a
+                          href={c.enrolledRepoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs font-bold text-brand hover:text-brand-hover flex items-center gap-1 hover:underline"
+                        >
+                          🐙 Open Repository
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-semibold italic">
+                          No Repo Cloned
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -174,7 +186,19 @@ export default function EnrolledCompetitions() {
               </div>
             </div>
 
-            <div className="border-t border-slate-100 pt-4 flex justify-end">
+            <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
+              {selectedComp.enrolledRepoUrl ? (
+                <a
+                  href={selectedComp.enrolledRepoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-5 py-2.5 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-sm shadow-brand/10 border border-brand/25"
+                >
+                  🐙 Open Repository
+                </a>
+              ) : (
+                <div />
+              )}
               <button
                 onClick={() => setSelectedComp(null)}
                 className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-semibold rounded-lg border border-slate-200 transition cursor-pointer"
