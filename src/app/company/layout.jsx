@@ -20,6 +20,7 @@ export default function CompanyLayout({ children }) {
   const [userRole, setUserRole] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [githubAppInstalled, setGithubAppInstalled] = useState(false);
+  const [githubInstallation, setGithubInstallation] = useState(null);
 
   // UI states
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -82,6 +83,7 @@ export default function CompanyLayout({ children }) {
       setCompetitions(data.competitions || []);
       setUserRole(data.currentUserRole || '');
       setGithubAppInstalled(!!data.githubAppInstalled);
+      setGithubInstallation(data.githubInstallation || null);
 
       // Load profile info for details display
       const profRes = await fetch('/api/profile', {
@@ -228,6 +230,7 @@ export default function CompanyLayout({ children }) {
         userRole,
         token,
         githubAppInstalled,
+        githubInstallation,
         fetchDashboardData,
         handleToggleEmployeeApprove,
         handleAddCompetition,

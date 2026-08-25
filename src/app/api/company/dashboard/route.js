@@ -39,7 +39,7 @@ export async function GET(req) {
         [companyId]
       ),
       pool.query(
-        'SELECT 1 FROM installations WHERE company_id = $1 AND is_deleted = false LIMIT 1',
+        'SELECT org_login, installation_id, installed_at FROM installations WHERE company_id = $1 AND is_deleted = false LIMIT 1',
         [companyId]
       )
     ]);
@@ -90,14 +90,21 @@ export async function GET(req) {
       }
     }));
 
-    const githubAppInstalled = installRes.rows.length > 0;
+    const installationRow = installRes.rows[0];
+    const githubAppInstalled = !!installationRow;
+    const githubInstallation = installationRow ? {
+      orgLogin: installationRow.org_login,
+      installationId: installationRow.installation_id.toString(),
+      installedAt: installationRow.installed_at
+    } : null;
 
     return NextResponse.json({
       company,
       currentUserRole: dbUser.role,
       employees,
       competitions,
-      githubAppInstalled
+      githubAppInstalled,
+      githubInstallation
     }, { status: 200 });
   } catch (err) {
     const authResponse = handleAuthError(err);
