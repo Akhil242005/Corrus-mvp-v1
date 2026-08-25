@@ -107,7 +107,7 @@ export async function POST(req) {
 
         // Create the repository in organization
         console.log(`[AUTO-TEMPLATE] Creating repository ${orgLogin}/${repoName}`);
-        await octokit.rest.repos.createInOrg({
+        await octokit.request('POST /orgs/{org}/repos', {
           org: orgLogin,
           name: repoName,
           private: true,
@@ -135,7 +135,7 @@ ${otherRequirements || 'None'}
         // Get readme file SHA if it exists
         let readmeSha = undefined;
         try {
-          const readmeRes = await octokit.rest.repos.getContent({
+          const readmeRes = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
             owner: orgLogin,
             repo: repoName,
             path: 'README.md'
@@ -147,7 +147,7 @@ ${otherRequirements || 'None'}
 
         // Write the README.md content
         console.log(`[AUTO-TEMPLATE] Updating README.md for ${repoName}`);
-        await octokit.rest.repos.createOrUpdateFileContents({
+        await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
           owner: orgLogin,
           repo: repoName,
           path: 'README.md',
@@ -158,7 +158,7 @@ ${otherRequirements || 'None'}
 
         // Mark repository as template
         console.log(`[AUTO-TEMPLATE] Setting ${repoName} as template repository`);
-        const updateRes = await octokit.rest.repos.update({
+        const updateRes = await octokit.request('PATCH /repos/{owner}/{repo}', {
           owner: orgLogin,
           repo: repoName,
           is_template: true

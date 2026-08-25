@@ -78,7 +78,7 @@ export async function POST(req, { params }) {
       // 1. Create the repository (if it doesn't already exist)
       let repoExists = false;
       try {
-        await octokit.rest.repos.get({
+        await octokit.request('GET /repos/{owner}/{repo}', {
           owner: competition.org_login,
           repo: repoName
         });
@@ -89,7 +89,7 @@ export async function POST(req, { params }) {
 
       if (!repoExists) {
         console.log(`[RETRY-TEMPLATE] Creating repository ${competition.org_login}/${repoName}`);
-        await octokit.rest.repos.createInOrg({
+        await octokit.request('POST /orgs/{org}/repos', {
           org: competition.org_login,
           name: repoName,
           private: true,
@@ -117,7 +117,7 @@ ${competition.other_requirements || 'None'}
 
       let readmeSha = undefined;
       try {
-        const readmeRes = await octokit.rest.repos.getContent({
+        const readmeRes = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
           owner: competition.org_login,
           repo: repoName,
           path: 'README.md'
@@ -128,7 +128,7 @@ ${competition.other_requirements || 'None'}
       }
 
       console.log(`[RETRY-TEMPLATE] Updating README.md for ${repoName}`);
-      await octokit.rest.repos.createOrUpdateFileContents({
+      await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
         owner: competition.org_login,
         repo: repoName,
         path: 'README.md',
@@ -139,7 +139,7 @@ ${competition.other_requirements || 'None'}
 
       // 3. Mark as template repository
       console.log(`[RETRY-TEMPLATE] Setting ${repoName} as template repository`);
-      const updateRes = await octokit.rest.repos.update({
+      const updateRes = await octokit.request('PATCH /repos/{owner}/{repo}', {
         owner: competition.org_login,
         repo: repoName,
         is_template: true
