@@ -58,8 +58,33 @@ export default function WorkspaceChallenges() {
   const [compLang, setCompLang] = useState('Python');
   const [compOther, setCompOther] = useState('');
   const [compTemplateRepo, setCompTemplateRepo] = useState('');
+  const [orgRepos, setOrgRepos] = useState([]);
+  const [loadingRepos, setLoadingRepos] = useState(false);
   const [compError, setCompError] = useState('');
   const [compSuccess, setCompSuccess] = useState('');
+
+  useEffect(() => {
+    if (isAddingComp) {
+      fetchOrgRepos();
+    }
+  }, [isAddingComp]);
+
+  const fetchOrgRepos = async () => {
+    setLoadingRepos(true);
+    try {
+      const res = await fetch('/api/company/github-repos', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOrgRepos(data.repos || []);
+      }
+    } catch (err) {
+      console.error('Failed to load GitHub repos:', err);
+    } finally {
+      setLoadingRepos(false);
+    }
+  };
 
   // Candidates Roster Modal State
   const [selectedComp, setSelectedComp] = useState(null);
@@ -388,15 +413,29 @@ export default function WorkspaceChallenges() {
               </div>
 
               <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block mb-1">GitHub Template Repository URL *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. https://github.com/my-org/challenge-template"
-                  value={compTemplateRepo}
-                  onChange={(e) => setCompTemplateRepo(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 bg-slate-50/50 outline-none glow-input font-medium"
-                  required
-                />
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide block mb-1">GitHub Template Repository *</label>
+                {loadingRepos ? (
+                  <div className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50/50 text-slate-400 font-semibold flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-slate-400/25 border-b-slate-600"></div>
+                    <span>Loading organization repositories...</span>
+                  </div>
+                ) : orgRepos.length > 0 ? (
+                  <select
+                    value={compTemplateRepo}
+                    onChange={(e) => setCompTemplateRepo(e.target.value)}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-slate-800 bg-slate-50/50 outline-none glow-input font-bold cursor-pointer"
+                    required
+                  >
+                    <option value="">Select a template repository...</option>
+                    {orgRepos.map(r => (
+                      <option key={r.fullName} value={r.htmlUrl}>{r.fullName}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="w-full px-3.5 py-2.5 border border-amber-200 bg-amber-50/30 text-amber-800 rounded-xl text-[11px] font-medium leading-relaxed">
+                    ⚠️ No templates found in your organization. Please ensure the GitHub App is installed and templates are created in your org.
+                  </div>
+                )}
               </div>
 
               {compError && <p className="text-xs font-bold text-rose-500">{compError}</p>}
