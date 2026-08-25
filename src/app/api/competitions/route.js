@@ -6,7 +6,7 @@ export async function GET(req) {
   try {
     // Authenticate token
     const decoded = await authenticateToken(req);
-    const userId = decoded.userId;
+    const userId = parseInt(decoded.userId || decoded.id, 10);
 
     const query = `
       SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
