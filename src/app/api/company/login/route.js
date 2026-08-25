@@ -15,6 +15,7 @@ export async function POST(req) {
     const { email, password } = await req.json();
 
     if (!validateEmail(email)) {
+      console.log('[DEBUG] Company login failed: Invalid email format:', email);
       return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 });
     }
 
@@ -26,6 +27,7 @@ export async function POST(req) {
     );
 
     if (userRes.rows.length === 0) {
+      console.log('[DEBUG] Company login failed: User not found in database for email:', trimmedEmail);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 400 });
     }
 
@@ -33,15 +35,18 @@ export async function POST(req) {
 
     // Ensure role is company user
     if (!['company_admin', 'company_employee'].includes(user.role)) {
+      console.log('[DEBUG] Company login failed: User role is not authorized for company console:', trimmedEmail, 'role:', user.role);
       return NextResponse.json({ error: 'Access denied: Account is not a registered company member' }, { status: 403 });
     }
 
     if (!user.password) {
+      console.log('[DEBUG] Company login failed: No password hash exists for user:', trimmedEmail);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 400 });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log('[DEBUG] Company login failed: Password comparison mismatch for user:', trimmedEmail);
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 400 });
     }
 
