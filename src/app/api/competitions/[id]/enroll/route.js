@@ -42,37 +42,30 @@ export async function POST(req, { params }) {
     // Start database transaction
     await dbClient.query('BEGIN');
 
-    // 1. Fetch enrolling candidate info to verify github_username
-    const userRes = await dbClient.query(
-      'SELECT github_username, email FROM users WHERE id = $1 AND is_deleted = false',
-      [user.userId]
-    );
-    if (userRes.rows.length === 0) {
-      await dbClient.query('ROLLBACK');
-      return NextResponse.json({ error: 'User account not found' }, { status: 404 });
-    }
-
-    const githubUsername = userRes.rows[0].github_username;
-    if (!githubUsername) {
-      await dbClient.query('ROLLBACK');
-      return NextResponse.json({ error: 'GitHub sign-in is required to enroll in this competition.' }, { status: 400 });
-    }
-
-    // 2. Fetch competition detail and associated company GitHub installation
-    const compQuery = `
-      SELECT c.id, c.title, c.company_id, c.github_template_repo,
-             i.installation_id, i.org_login
+    // Single-query optimization: fetch competition, installation, user details, and enrollment status in 1 roundtrip
+    const fetchQuery = `
+      SELECT 
+        c.id, c.title, c.company_id, c.github_template_repo,
+        i.installation_id, i.org_login,
+        u.github_username, u.email AS user_email,
+        (SELECT 1 FROM competition_enrollments ce WHERE ce.competition_id = c.id AND ce.user_id = $2) AS is_enrolled
       FROM competitions c
+      CROSS JOIN (SELECT github_username, email FROM users WHERE id = $2 AND is_deleted = false) u
       LEFT JOIN installations i ON c.company_id = i.company_id AND i.is_deleted = false
       WHERE c.id = $1 AND c.is_deleted = false
     `;
-    const compRes = await dbClient.query(compQuery, [competitionId]);
-    if (compRes.rows.length === 0) {
+    const fetchRes = await dbClient.query(fetchQuery, [competitionId, user.userId]);
+    if (fetchRes.rows.length === 0) {
       await dbClient.query('ROLLBACK');
       return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
     }
 
-    const competition = compRes.rows[0];
+    const competition = fetchRes.rows[0];
+    const githubUsername = competition.github_username;
+    if (!githubUsername) {
+      await dbClient.query('ROLLBACK');
+      return NextResponse.json({ error: 'GitHub sign-in is required to enroll in this competition.' }, { status: 400 });
+    }
 
     // If company hasn't installed GitHub App or template repo is missing, block enrollment
     if (!competition.installation_id || !competition.github_template_repo) {
@@ -80,13 +73,7 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: "This company hasn't completed GitHub setup yet" }, { status: 400 });
     }
 
-    // 3. Verify if already enrolled
-    const enrollRes = await dbClient.query(
-      'SELECT 1 FROM competition_enrollments WHERE competition_id = $1 AND user_id = $2',
-      [competitionId, user.userId]
-    );
-
-    if (enrollRes.rows.length > 0) {
+    if (competition.is_enrolled) {
       await dbClient.query('ROLLBACK');
       return NextResponse.json({ error: 'You are already enrolled in this competition.' }, { status: 400 });
     }
@@ -173,22 +160,23 @@ export async function POST(req, { params }) {
     // Commit database transaction
     await dbClient.query('COMMIT');
 
-    // 5. Audit Logging
-    await logAudit({
-      action: 'ENROLL_COMPETITION',
-      performedBy: user.userId,
-      targetType: 'Competition',
-      targetId: competition.id,
-      details: `Candidate: ${user.email} enrolled in Competition: "${competition.title}"`
-    });
-
-    await logAudit({
-      action: 'REPO_PROVISIONED',
-      performedBy: user.userId,
-      targetType: 'Competition',
-      targetId: competition.id,
-      details: `Automated repository provisioned for candidate ${user.email} at ${repoUrl}`
-    });
+    // 5. Audit Logging (Asynchronous & concurrent to avoid blocking response)
+    Promise.all([
+      logAudit({
+        action: 'ENROLL_COMPETITION',
+        performedBy: user.userId,
+        targetType: 'Competition',
+        targetId: competition.id,
+        details: `Candidate: ${competition.user_email} enrolled in Competition: "${competition.title}"`
+      }),
+      logAudit({
+        action: 'REPO_PROVISIONED',
+        performedBy: user.userId,
+        targetType: 'Competition',
+        targetId: competition.id,
+        details: `Automated repository provisioned for candidate ${competition.user_email} at ${repoUrl}`
+      })
+    ]).catch(err => console.error('[DEBUG] Background audit logging failed:', err));
 
     return NextResponse.json({ message: 'Enrolled successfully!', repoUrl }, { status: 200 });
   } catch (err) {
