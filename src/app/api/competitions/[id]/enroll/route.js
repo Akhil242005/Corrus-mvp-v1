@@ -104,51 +104,49 @@ export async function POST(req, { params }) {
       }
     }
 
-    // Detect if we are in local development mock-mode
-    const isMockMode = !appId || !rawPrivateKey || appId === '123456';
+    if (!appId || !rawPrivateKey) {
+      await dbClient.query('ROLLBACK');
+      return NextResponse.json({ error: 'GitHub App configuration is missing on the server' }, { status: 500 });
+    }
+
     let repoUrl = '';
     const repoCreatedAt = new Date();
 
-    if (isMockMode) {
-      repoUrl = `https://github.com/${competition.org_login}/${repoName}`;
-      console.log(`[MOCK PROVISIONING] Mocking repository creation for ${repoName}: ${repoUrl}`);
-    } else {
-      // Live GitHub API repository creation and collaborator invitation
-      try {
-        const privateKey = rawPrivateKey.replace(/\\n/g, '\n');
-        const app = new App({
-          appId,
-          privateKey
-        });
+    // Live GitHub API repository creation and collaborator invitation
+    try {
+      const privateKey = rawPrivateKey.replace(/\\n/g, '\n');
+      const app = new App({
+        appId,
+        privateKey
+      });
 
-        const octokit = await app.getInstallationOctokit(parseInt(competition.installation_id, 10));
+      const octokit = await app.getInstallationOctokit(parseInt(competition.installation_id, 10));
 
-        // Generate repository from template
-        console.log(`[LIVE PROVISIONING] Duplicating template ${parsedTemplate.owner}/${parsedTemplate.repo} into ${competition.org_login}/${repoName}`);
-        const genRes = await octokit.request('POST /repos/{template_owner}/{template_repo}/generate', {
-          template_owner: parsedTemplate.owner,
-          template_repo: parsedTemplate.repo,
-          owner: competition.org_login,
-          name: repoName,
-          private: true
-        });
-        repoUrl = genRes.data.html_url;
+      // Generate repository from template
+      console.log(`[LIVE PROVISIONING] Duplicating template ${parsedTemplate.owner}/${parsedTemplate.repo} into ${competition.org_login}/${repoName}`);
+      const genRes = await octokit.request('POST /repos/{template_owner}/{template_repo}/generate', {
+        template_owner: parsedTemplate.owner,
+        template_repo: parsedTemplate.repo,
+        owner: competition.org_login,
+        name: repoName,
+        private: true
+      });
+      repoUrl = genRes.data.html_url;
 
-        // Invite candidate as collaborator
-        console.log(`[LIVE PROVISIONING] Inviting candidate ${githubUsername} as collaborator on ${repoName}`);
-        await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
-          owner: competition.org_login,
-          repo: repoName,
-          username: githubUsername,
-          permission: 'push'
-        });
-      } catch (gitErr) {
-        console.error('GitHub API repository provisioning error:', gitErr);
-        await dbClient.query('ROLLBACK');
-        return NextResponse.json({
-          error: `GitHub Provisioning Failed: ${gitErr.message || 'Failed to generate repository or invite collaborator'}`
-        }, { status: 400 });
-      }
+      // Invite candidate as collaborator
+      console.log(`[LIVE PROVISIONING] Inviting candidate ${githubUsername} as collaborator on ${repoName}`);
+      await octokit.request('PUT /repos/{owner}/{repo}/collaborators/{username}', {
+        owner: competition.org_login,
+        repo: repoName,
+        username: githubUsername,
+        permission: 'push'
+      });
+    } catch (gitErr) {
+      console.error('GitHub API repository provisioning error:', gitErr);
+      await dbClient.query('ROLLBACK');
+      return NextResponse.json({
+        error: `GitHub Provisioning Failed: ${gitErr.message || 'Failed to generate repository or invite collaborator'}`
+      }, { status: 400 });
     }
 
     // 4. Save enrollment row
