@@ -22,6 +22,16 @@ export async function GET(req) {
 
     const res = await pool.query(query);
 
+    // Fetch all enrollments to map enrolled users
+    const enrollmentsRes = await pool.query('SELECT competition_id, user_id FROM competition_enrollments');
+    const enrollMap = {};
+    enrollmentsRes.rows.forEach(row => {
+      if (!enrollMap[row.competition_id]) {
+        enrollMap[row.competition_id] = [];
+      }
+      enrollMap[row.competition_id].push(row.user_id);
+    });
+
     const competitions = res.rows.map(row => ({
       _id: row.id.toString(),
       id: row.id,
@@ -31,6 +41,7 @@ export async function GET(req) {
       experienceRequired: row.experienceRequired,
       otherRequirements: row.otherRequirements || '',
       createdAt: row.createdAt,
+      enrolledUsers: enrollMap[row.id] || [],
       companyId: {
         _id: row.companyId.toString(),
         id: row.companyId,

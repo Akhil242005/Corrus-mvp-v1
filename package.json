@@ -10,10 +10,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@octokit/app": "^16.1.4",
+    "@octokit/auth-app": "^8.3.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "jsonwebtoken": "^9.0.3",
     "next": "16.3.1",
+    "nodemailer": "^9.0.5",
     "pg": "^8.11.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",

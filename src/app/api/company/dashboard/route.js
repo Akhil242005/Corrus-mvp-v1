@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { requireRole } from '@/lib/auth';
+import { requireRole, handleAuthError } from '@/lib/auth';
 
 export async function GET(req) {
   try {
@@ -11,15 +11,38 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    // Fetch company details
-    const compRes = await pool.query(
-      `SELECT c.id, c.name, c.place, c.description, c.website, c.is_verified as "isVerified", 
-              u.firstname as "adminFirst", u.lastname as "adminLast", u.email as "adminEmail"
-       FROM companies c
-       LEFT JOIN users u ON c.admin_id = u.id
-       WHERE c.id = $1 AND c.is_deleted = false`,
-      [companyId]
-    );
+    // Fetch company details, employees list, competitions list, and installation status in parallel
+    const [compRes, empRes, compsRes, installRes] = await Promise.all([
+      pool.query(
+        `SELECT c.id, c.name, c.place, c.description, c.website, c.is_verified as "isVerified", 
+                u.firstname as "adminFirst", u.lastname as "adminLast", u.email as "adminEmail"
+         FROM companies c
+         LEFT JOIN users u ON c.admin_id = u.id
+         WHERE c.id = $1 AND c.is_deleted = false`,
+        [companyId]
+      ),
+      pool.query(
+        `SELECT id, firstname, lastname, email, phone, is_approved as "isApproved", created_at as "createdAt" 
+         FROM users 
+         WHERE company_id = $1 AND role = 'company_employee' AND is_deleted = false
+         ORDER BY created_at DESC`,
+        [companyId]
+      ),
+      pool.query(
+        `SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
+                c.experience_required as "experienceRequired", c.other_requirements as "otherRequirements", c.created_at as "createdAt",
+                u.firstname as "creatorFirst", u.lastname as "creatorLast"
+         FROM competitions c
+         INNER JOIN users u ON c.created_by = u.id
+         WHERE c.company_id = $1 AND c.is_deleted = false
+         ORDER BY c.created_at DESC`,
+        [companyId]
+      ),
+      pool.query(
+        'SELECT 1 FROM installations WHERE company_id = $1 AND is_deleted = false LIMIT 1',
+        [companyId]
+      )
+    ]);
 
     if (compRes.rows.length === 0) {
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -41,14 +64,6 @@ export async function GET(req) {
       }
     };
 
-    // Fetch company employees list
-    const empRes = await pool.query(
-      `SELECT id, firstname, lastname, email, phone, is_approved as "isApproved", created_at as "createdAt" 
-       FROM users 
-       WHERE company_id = $1 AND role = 'company_employee' AND is_deleted = false
-       ORDER BY created_at DESC`,
-      [companyId]
-    );
     const employees = empRes.rows.map(e => ({
       _id: e.id.toString(),
       id: e.id,
@@ -60,17 +75,6 @@ export async function GET(req) {
       createdAt: e.createdAt
     }));
 
-    // Fetch competitions list
-    const compsRes = await pool.query(
-      `SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
-              c.experience_required as "experienceRequired", c.other_requirements as "otherRequirements", c.created_at as "createdAt",
-              u.firstname as "creatorFirst", u.lastname as "creatorLast"
-       FROM competitions c
-       INNER JOIN users u ON c.created_by = u.id
-       WHERE c.company_id = $1 AND c.is_deleted = false
-       ORDER BY c.created_at DESC`,
-      [companyId]
-    );
     const competitions = compsRes.rows.map(c => ({
       _id: c.id.toString(),
       id: c.id,
@@ -86,13 +90,19 @@ export async function GET(req) {
       }
     }));
 
+    const githubAppInstalled = installRes.rows.length > 0;
+
     return NextResponse.json({
       company,
       currentUserRole: dbUser.role,
       employees,
-      competitions
+      competitions,
+      githubAppInstalled
     }, { status: 200 });
   } catch (err) {
+    const authResponse = handleAuthError(err);
+    if (authResponse) return authResponse;
+
     console.error('Company Dashboard API Error:', err);
     return NextResponse.json({ error: err.message || 'Failed to fetch company dashboard data' }, { status: 500 });
   }

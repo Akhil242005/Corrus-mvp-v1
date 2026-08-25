@@ -78,7 +78,7 @@ export default function AuthPage() {
         throw new Error(data.error || 'Request failed');
       }
 
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('corrus_candidate_token', data.token);
       setSuccess(isLogin ? 'Login successful!' : 'Account registered successfully!');
       
       // Verification call to resolve landing redirection
@@ -177,6 +177,7 @@ export default function AuthPage() {
             placeholder="name@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="off"
             className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm text-slate-800 bg-white outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition duration-150"
           />
           <input
@@ -184,6 +185,7 @@ export default function AuthPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
             className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm text-slate-800 bg-white outline-none focus:border-brand focus:ring-4 focus:ring-brand/10 transition duration-150"
           />
 

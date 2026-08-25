@@ -50,6 +50,28 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Your employee account is pending approval by company admin.' }, { status: 403 });
     }
 
+    // Check if password reset is required (applies to company_employee only)
+    if (user.role === 'company_employee' && user.must_reset_password) {
+      const resetToken = jwt.sign(
+        { 
+          userId: user.id.toString(), 
+          email: user.email, 
+          firstname: user.firstname, 
+          role: user.role,
+          companyId: user.company_id ? user.company_id.toString() : null,
+          passwordResetRequired: true
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      return NextResponse.json({ 
+        message: 'Password reset required', 
+        token: resetToken, 
+        passwordResetRequired: true 
+      }, { status: 200 });
+    }
+
     const token = jwt.sign(
       { 
         userId: user.id.toString(), 

@@ -77,10 +77,10 @@ export async function GET(req) {
     if (userCheck.rows.length === 0) {
       // Register new user
       const insertRes = await pool.query(
-        `INSERT INTO users (firstname, lastname, email, github_id, auth_provider) 
-         VALUES ($1, $2, $3, $4, 'github') 
+        `INSERT INTO users (firstname, lastname, email, github_id, github_username, auth_provider) 
+         VALUES ($1, $2, $3, $4, $5, 'github') 
          RETURNING id, firstname, email, role`,
-        [firstname, lastname, email, githubId]
+        [firstname, lastname, email, githubId, githubProfile.login]
       );
       user = insertRes.rows[0];
 
@@ -89,18 +89,19 @@ export async function GET(req) {
         performedBy: user.id,
         targetType: 'User',
         targetId: user.id,
-        details: `New candidate registered via GitHub: ${user.email}`
+        details: `New candidate registered via GitHub: ${user.email} (${githubProfile.login})`
       });
     } else {
       user = userCheck.rows[0];
-      // Update GitHub ID and provider if needed
+      // Update GitHub ID, username, and provider if needed
       await pool.query(
-        'UPDATE users SET github_id = $1, auth_provider = \'github\' WHERE id = $2',
-        [githubId, user.id]
+        'UPDATE users SET github_id = $1, github_username = $2, auth_provider = \'github\' WHERE id = $3',
+        [githubId, githubProfile.login, user.id]
       );
       
       // Update local object fields
       user.github_id = githubId;
+      user.github_username = githubProfile.login;
       user.auth_provider = 'github';
     }
 

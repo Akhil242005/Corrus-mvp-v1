@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import pool from './db';
+import { NextResponse } from 'next/server';
 
 // Extract JWT token from header and verify it
 export async function authenticateToken(req) {
@@ -12,8 +13,24 @@ export async function authenticateToken(req) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // If token has passwordResetRequired claim, restrict to reset endpoints only
+    if (decoded.passwordResetRequired) {
+      const pathname = req.nextUrl ? req.nextUrl.pathname : '';
+      const allowedPaths = [
+        '/api/company/request-password-reset-otp',
+        '/api/company/confirm-password-reset'
+      ];
+      if (!allowedPaths.includes(pathname)) {
+        throw new Error('Access denied: Password reset required');
+      }
+    }
+
     return decoded;
   } catch (err) {
+    if (err.message === 'Access denied: Password reset required') {
+      throw err;
+    }
     throw new Error('Invalid or expired token');
   }
 }
@@ -140,3 +157,30 @@ export async function logAudit({
     console.error('Audit Logging Error:', err);
   }
 }
+
+// Maps requireRole/authenticateToken error strings to 401/403 NextResponse payloads
+export function handleAuthError(err) {
+  const authErrors = [
+    'Access token required',
+    'Invalid or expired token',
+    'User not found or account deactivated'
+  ];
+  const forbiddenErrors = [
+    'Access denied: Unauthorized role',
+    'Your employee account is pending approval by company admin.',
+    'Company association not found'
+  ];
+
+  if (err.message === 'Access denied: Password reset required') {
+    return NextResponse.json({ error: 'Password reset required', passwordResetRequired: true }, { status: 403 });
+  }
+
+  if (authErrors.includes(err.message)) {
+    return NextResponse.json({ error: err.message }, { status: 401 });
+  }
+  if (forbiddenErrors.includes(err.message)) {
+    return NextResponse.json({ error: err.message }, { status: 403 });
+  }
+  return null;
+}
+

@@ -1,0 +1,28 @@
+{
+  "cleanUrls": true,
+  "framework": "nextjs",
+  "__comment": "This repository is deployed as three separate instances with distinct APP_MODE configurations:",
+  "deployments_reference": {
+    "candidate": {
+      "console": "Candidate Console",
+      "custom_domain": "candidate.corrus.io",
+      "env_variables": {
+        "APP_MODE": "candidate"
+      }
+    },
+    "company": {
+      "console": "Company Console",
+      "custom_domain": "company.corrus.io",
+      "env_variables": {
+        "APP_MODE": "company"
+      }
+    },
+    "admin": {
+      "console": "Admin Console",
+      "custom_domain": "admin.corrus.io",
+      "env_variables": {
+        "APP_MODE": "admin"
+      }
+    }
+  }
+}

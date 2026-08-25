@@ -11,7 +11,7 @@ function SuccessHandler() {
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
-      localStorage.setItem('token', token);
+      localStorage.setItem('corrus_candidate_token', token);
       
       // Verification call to resolve landing redirection
       fetch('/api/auth/verify', {

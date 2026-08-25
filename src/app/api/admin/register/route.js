@@ -18,7 +18,7 @@ function validatePhone(phone) {
 export async function POST(req) {
   try {
     const { firstname, lastname, email, phone, password, securityKey } = await req.json();
-    const expectedKey = process.env.ADMIN_SECURITY_KEY || 'corruss_admin_secret_99';
+    const expectedKey = process.env.ADMIN_SECURITY_KEY || 'corrus_admin_secret_99';
 
     if (!securityKey || securityKey !== expectedKey) {
       return NextResponse.json({ error: 'Invalid Admin Security Key' }, { status: 403 });
