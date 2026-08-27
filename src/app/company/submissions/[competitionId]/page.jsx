@@ -238,6 +238,37 @@ export default function CompanyCompetitionSubmissions() {
     }
   };
 
+  const triggerCloseSubmissions = () => {
+    setActionConfirmDetails({
+      type: 'closeSubmissions',
+      title: 'Close Submissions Now',
+      consequence: 'This will immediately close solution submissions for all candidates. Their repository push privileges will be downgraded to read-only (pull access), preventing any further updates.'
+    });
+    setConfirmOpen(true);
+  };
+
+  const executeCloseSubmissions = async () => {
+    try {
+      const res = await fetch(`/api/company/competitions/${competitionId}/close-submissions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to close submissions');
+        return;
+      }
+
+      alert(`Submissions successfully closed! Downgraded: ${data.successCount} repos (Failed: ${data.failCount} repos).`);
+      await fetchDashboardData(token);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Filter client-side
   const filteredSubs = submissions.filter(sub => {
     const candidateIdStr = getCanonicalId('candidate', sub.candidateId);
@@ -305,18 +336,37 @@ export default function CompanyCompetitionSubmissions() {
           <p className="text-slate-800 font-bold text-sm">
             🕒 {getDeadlineDisplay()}
           </p>
-          {comp.autoCloseEnabled && (
+          {comp.closedAt && (
+            <p className="text-xs text-rose-600 font-bold mt-1">
+              🚫 Submissions were manually closed on {new Date(comp.closedAt).toLocaleDateString()} at {new Date(comp.closedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+            </p>
+          )}
+          {comp.autoCloseEnabled && !comp.closedAt && (
             <p className="text-[10px] text-emerald-600 font-bold">
               ✔ Auto-close on deadline is enabled (GitHub push permissions will downgrade to read-only)
             </p>
           )}
         </div>
-        <button
-          onClick={() => setIsDeadlineOpen(true)}
-          className="px-4 py-2 bg-brand text-white text-xs font-bold rounded-xl hover:bg-brand-hover transition cursor-pointer shadow-md shadow-brand/10 self-start sm:self-center"
-        >
-          📅 Edit Deadline Settings
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-center">
+          <button
+            onClick={() => setIsDeadlineOpen(true)}
+            className="px-4 py-2 bg-brand text-white text-xs font-bold rounded-xl hover:bg-brand-hover transition cursor-pointer shadow-md shadow-brand/10"
+          >
+            📅 Edit Deadline Settings
+          </button>
+          {!comp.closedAt ? (
+            <button
+              onClick={triggerCloseSubmissions}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-md shadow-rose-600/10"
+            >
+              🔒 Close Submissions Now
+            </button>
+          ) : (
+            <span className="px-4 py-2 bg-rose-50 text-rose-600 border border-rose-250/60 text-xs font-bold rounded-xl select-none">
+              🚫 Submissions Closed
+            </span>
+          )}
+        </div>
       </div>
 
       <SearchFilterBar
@@ -731,12 +781,26 @@ export default function CompanyCompetitionSubmissions() {
             setConfirmOpen(false);
             setActionConfirmDetails(null);
           }}
-          onConfirm={actionConfirmDetails.type === 'deadline' ? executeSaveDeadline : handleExecuteSubAction}
+          onConfirm={
+            actionConfirmDetails.type === 'deadline' 
+              ? executeSaveDeadline 
+              : actionConfirmDetails.type === 'closeSubmissions'
+              ? executeCloseSubmissions
+              : handleExecuteSubAction
+          }
           actionName={actionConfirmDetails.title}
-          targetName={actionConfirmDetails.type === 'deadline' ? comp.title : (selectedSub ? selectedSub.candidateName : '')}
-          targetId={actionConfirmDetails.type === 'deadline' ? getCanonicalId('challenge', comp.id) : (selectedSub ? getCanonicalId('submission', selectedSub.id) : '')}
+          targetName={
+            actionConfirmDetails.type === 'deadline' || actionConfirmDetails.type === 'closeSubmissions'
+              ? comp.title 
+              : (selectedSub ? selectedSub.candidateName : '')
+          }
+          targetId={
+            actionConfirmDetails.type === 'deadline' || actionConfirmDetails.type === 'closeSubmissions'
+              ? getCanonicalId('challenge', comp.id) 
+              : (selectedSub ? getCanonicalId('submission', selectedSub.id) : '')
+          }
           consequenceText={actionConfirmDetails.consequence}
-          isDestructive={actionConfirmDetails.type === 'reject'}
+          isDestructive={actionConfirmDetails.type === 'reject' || actionConfirmDetails.type === 'closeSubmissions'}
         />
       )}
     </div>
