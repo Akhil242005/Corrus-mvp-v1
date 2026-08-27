@@ -199,6 +199,9 @@ ${otherRequirements || 'None'}
       otherRequirements: competition.otherRequirements,
       githubTemplateRepo: competition.githubTemplateRepo,
       githubSetupStatus: competition.githubSetupStatus,
+      submissionDeadline: null,
+      autoCloseEnabled: false,
+      closedAt: null,
       createdAt: competition.createdAt
     };
 

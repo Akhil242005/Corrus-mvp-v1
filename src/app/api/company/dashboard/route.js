@@ -32,6 +32,9 @@ export async function GET(req) {
         `SELECT c.id, c.title, c.task_description as "taskDescription", c.skills_required as "skillsRequired", 
                 c.experience_required as "experienceRequired", c.other_requirements as "otherRequirements", c.created_at as "createdAt",
                 c.github_template_repo as "githubTemplateRepo", c.github_setup_status as "githubSetupStatus",
+                c.submission_deadline as "submissionDeadline", c.auto_close_enabled as "autoCloseEnabled", c.closed_at as "closedAt",
+                (SELECT COUNT(*)::int FROM competition_enrollments ce WHERE ce.competition_id = c.id) as "enrolledCount",
+                (SELECT COUNT(*)::int FROM submissions s WHERE s.competition_id = c.id AND s.is_deleted = false) as "submissionCount",
                 u.firstname as "creatorFirst", u.lastname as "creatorLast"
          FROM competitions c
          INNER JOIN users u ON c.created_by = u.id
@@ -86,6 +89,11 @@ export async function GET(req) {
       otherRequirements: c.otherRequirements || '',
       githubTemplateRepo: c.githubTemplateRepo,
       githubSetupStatus: c.githubSetupStatus || 'completed',
+      submissionDeadline: c.submissionDeadline,
+      autoCloseEnabled: c.autoCloseEnabled || false,
+      closedAt: c.closedAt,
+      enrolledCount: c.enrolledCount || 0,
+      submissionCount: c.submissionCount || 0,
       createdAt: c.createdAt,
       createdBy: {
         firstname: c.creatorFirst,
