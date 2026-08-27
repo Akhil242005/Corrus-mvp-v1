@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { authenticateToken } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   try {
     // Authenticate token
@@ -34,7 +36,7 @@ export async function GET(req) {
       }
       enrollMap[row.competition_id].push(row.user_id);
 
-      if (row.user_id === userId) {
+      if (Number(row.user_id) === Number(userId)) {
         userRepoMap[row.competition_id] = row.repo_url;
       }
     });

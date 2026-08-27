@@ -314,6 +314,7 @@ export default function WorkspaceChallenges() {
                       <th className="p-3">Enrollment ID</th>
                       <th className="p-3">Name</th>
                       <th className="p-3">Email Address</th>
+                      <th className="p-3">Sandbox Repository</th>
                       <th className="p-3">Contact</th>
                       <th className="p-3 pr-4">Enrolled At</th>
                     </tr>
@@ -330,6 +331,20 @@ export default function WorkspaceChallenges() {
                           </td>
                           <td className="p-3 font-extrabold text-slate-900">{cand.firstname} {cand.lastname}</td>
                           <td className="p-3 text-slate-500 font-semibold">{cand.email}</td>
+                          <td className="p-3 text-brand font-semibold">
+                            {cand.repoUrl ? (
+                              <a
+                                href={cand.repoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline hover:text-brand-hover flex items-center gap-1"
+                              >
+                                🐙 Open Repo
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 font-normal italic">Pending Setup</span>
+                            )}
+                          </td>
                           <td className="p-3 text-slate-500">{cand.phone || 'N/A'}</td>
                           <td className="p-3 pr-4 text-slate-400">{new Date(cand.createdAt).toLocaleDateString()}</td>
                         </tr>

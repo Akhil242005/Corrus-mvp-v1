@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req, { params }) {
   try {
     const user = await requireRole(req, ['company_admin', 'company_employee']);
@@ -28,7 +30,7 @@ export async function GET(req, { params }) {
 
     // Fetch enrolled users list
     const rosterRes = await pool.query(
-      `SELECT u.id, u.firstname, u.lastname, u.email, u.phone, ce.created_at as "createdAt"
+      `SELECT u.id, u.firstname, u.lastname, u.email, u.phone, ce.repo_url as "repoUrl", ce.created_at as "createdAt"
        FROM users u
        INNER JOIN competition_enrollments ce ON u.id = ce.user_id
        WHERE ce.competition_id = $1 AND u.is_deleted = false
@@ -43,6 +45,7 @@ export async function GET(req, { params }) {
       lastname: e.lastname,
       email: e.email,
       phone: e.phone || '',
+      repoUrl: e.repoUrl || null,
       createdAt: e.createdAt
     }));
 
