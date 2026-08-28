@@ -31,12 +31,11 @@ export async function syncSubmissions() {
         const newStatus = data.status; // 'PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'
 
         if (newStatus === 'COMPLETED' || newStatus === 'SUCCESS') {
-          const verdict = data.verdict || {};
-          const score = verdict.final_score !== undefined ? verdict.final_score : null;
-          const band = verdict.band || null;
-          const confidence = verdict.confidence !== undefined ? verdict.confidence : null;
-          const reasons = verdict.reasons || [];
-          const attributes = verdict.attributes || {};
+          const score = data.final_score !== undefined ? data.final_score : (data.verdict?.final_score !== undefined ? data.verdict.final_score : null);
+          const band = data.band || data.verdict?.band || null;
+          const confidence = data.confidence !== undefined ? data.confidence : (data.verdict?.confidence !== undefined ? data.verdict.confidence : null);
+          const reasons = data.reasons || data.verdict?.reasons || [];
+          const attributes = data.attributes || data.verdict?.attributes || {};
 
           await pool.query(
             `UPDATE submissions 

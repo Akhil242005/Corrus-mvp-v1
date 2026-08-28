@@ -118,46 +118,61 @@ export async function POST(req) {
       }
       const companyId = instRes.rows[0].company_id;
 
-      // 2. Parse repoName: {competition-slug}-{candidate-id}
-      const parts = repoName.split('-');
-      if (parts.length < 2) {
-        return NextResponse.json({ error: 'Repository name does not match expected naming convention' }, { status: 400 });
-      }
-      const candidateId = parseInt(parts[parts.length - 1], 10);
-      const competitionSlug = parts.slice(0, parts.length - 1).join('-');
+      let candidateId = null;
+      let competitionId = null;
+      let matchedComp = null;
 
-      if (isNaN(candidateId)) {
-        return NextResponse.json({ error: 'Invalid candidate ID in repository name' }, { status: 400 });
+      // Try lookup by repo URL in competition_enrollments
+      const cleanUrl = cloneUrl.replace(/\.git$/, '');
+      const enrollmentRes = await pool.query(
+        `SELECT competition_id, user_id FROM competition_enrollments 
+         WHERE repo_url = $1 OR repo_url = $2 OR repo_url LIKE $3`,
+        [cloneUrl, cleanUrl, `%/${repoName}`]
+      );
+
+      if (enrollmentRes.rows.length > 0) {
+        candidateId = enrollmentRes.rows[0].user_id;
+        competitionId = enrollmentRes.rows[0].competition_id;
+        
+        // Fetch competition info
+        const compRes = await pool.query(
+          'SELECT id, title, language FROM competitions WHERE id = $1 AND is_deleted = false',
+          [competitionId]
+        );
+        matchedComp = compRes.rows[0];
+      } else {
+        // Fallback to legacy parsing: {competition-slug}-{candidate-id}
+        const parts = repoName.split('-');
+        if (parts.length >= 2) {
+          const parsedCandidateId = parseInt(parts[parts.length - 1], 10);
+          if (!isNaN(parsedCandidateId)) {
+            candidateId = parsedCandidateId;
+            const competitionSlug = parts.slice(0, parts.length - 1).join('-');
+            
+            const compsRes = await pool.query(
+              'SELECT id, title, language FROM competitions WHERE company_id = $1 AND is_deleted = false',
+              [companyId]
+            );
+            const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            matchedComp = compsRes.rows.find(c => slugify(c.title) === competitionSlug);
+            if (matchedComp) {
+              competitionId = matchedComp.id;
+            }
+          }
+        }
       }
 
-      // 3. Verify candidate user exists
+      if (!candidateId || !competitionId || !matchedComp) {
+        return NextResponse.json({ error: 'Could not resolve enrolled candidate and competition for this repository' }, { status: 404 });
+      }
+
+      // Verify candidate user exists and is active
       const userRes = await pool.query(
         'SELECT id FROM users WHERE id = $1 AND is_deleted = false',
         [candidateId]
       );
       if (userRes.rows.length === 0) {
         return NextResponse.json({ error: 'Candidate user not found or inactive' }, { status: 404 });
-      }
-
-      // 4. Resolve competition_id from slugified titles of company's competitions
-      const compsRes = await pool.query(
-        'SELECT id, title, language FROM competitions WHERE company_id = $1 AND is_deleted = false',
-        [companyId]
-      );
-      const slugify = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-      const matchedComp = compsRes.rows.find(c => slugify(c.title) === competitionSlug);
-      if (!matchedComp) {
-        return NextResponse.json({ error: 'Active competition matching repository name slug not found' }, { status: 404 });
-      }
-      const competitionId = matchedComp.id;
-
-      // Verify candidate is enrolled
-      const enrollmentRes = await pool.query(
-        'SELECT 1 FROM competition_enrollments WHERE competition_id = $1 AND user_id = $2',
-        [competitionId, candidateId]
-      );
-      if (enrollmentRes.rows.length === 0) {
-        return NextResponse.json({ error: 'Candidate is not enrolled in this competition' }, { status: 400 });
       }
 
       // 5. Record initial PENDING submission record
